@@ -31,6 +31,7 @@ struct MapView: View {
                 .onChange(of: selectedStation) { newValue in
                     print(newValue.stationName)
                     viewModel.region.center = CLLocationCoordinate2D(latitude: newValue.stationLatitude, longitude: newValue.stationLongitude)
+                
                     
 //                    switch newValue.id {
 //                    case 1:
@@ -63,6 +64,12 @@ struct MapView: View {
                         let distance = viewModel.calculateDistance(from: userLocation, to: CLLocationCoordinate2D(latitude: newValue.stationLatitude, longitude: newValue.stationLongitude))
                         distanceToStation = distance
                         print("Distance to \(newValue.stationName): \(distance) meters")
+                        
+                        if distanceToStation <= 100.0 {
+                            print("You are inside \(newValue.stationName) station")
+                        } else {
+                            print("You are far from \(newValue.stationName) station")
+                        }
                     }
                 }
             
