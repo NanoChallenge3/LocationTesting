@@ -13,13 +13,33 @@ enum MapDetails {
     static let defaultMapSpan = MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
 }
 
+//protocol StartGetCurrentStationWithLocation {
+//    var delegate: CLLocationManagerDelegate {get set}
+//}
+
+protocol MapViewModelDelegate {
+    func mapManager(station: StationModel)
+}
+
 final class MapViewModel: NSObject, ObservableObject, CLLocationManagerDelegate {
+    var delegate: MapViewModelDelegate?
+    
     @Published var region = MKCoordinateRegion(center: MapDetails.startingLocation,
                                                span: MapDetails.defaultMapSpan)
     
-    
     var locationManager: CLLocationManager?
+    
+    @Published var currentStation: String?
+    
+    init(locationManager: CLLocationManager? = nil) {
+        super.init()
         
+        self.locationManager?.delegate = self
+        
+//        print(locationManager == nil)
+        
+    }
+    
     func checkIfLocationServiceIsEnabled() {
         if CLLocationManager.locationServicesEnabled() {
             self.locationManager = CLLocationManager()
@@ -45,6 +65,8 @@ final class MapViewModel: NSObject, ObservableObject, CLLocationManagerDelegate 
             region = MKCoordinateRegion(center: locationManager.location!.coordinate,
                                         span: MapDetails.defaultMapSpan)
 
+            self.locationManager?.startUpdatingLocation()
+
         @unknown default:
             break
         }
@@ -61,5 +83,29 @@ final class MapViewModel: NSObject, ObservableObject, CLLocationManagerDelegate 
         checkLocationAuthorization()
     }
     
+    func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
+        let userLocation = locationManager?.location!.coordinate
+        
+        print("executed")
+        
+        if let userLocation = userLocation {
+            
+            for station in StationList.shared.stationList {
+                let distance = calculateDistance(from: userLocation, to: CLLocationCoordinate2D(latitude: station.stationLatitude, longitude: station.stationLongitude))
+                
+                if distance <= 100.0 {
+                    print("You have arrived in \(station.stationName) station")
+                    currentStation = station.stationName
+                    delegate?.mapManager(station: station)
+                    break
+                } else {
+                    print("You are far from \(station.stationName) station")
+                }
+            }
+        }
+        
+        
+    }
     
 }
+
